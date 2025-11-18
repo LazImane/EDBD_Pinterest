@@ -101,7 +101,7 @@ INSERT INTO dim_category VALUES (3, 'Men Fashion', 1, 2, 'Men clothing and acces
 INSERT INTO dim_category VALUES (4, 'Electronics', NULL, 1, 'Electronic devices and gadgets', 1);
 INSERT INTO dim_category VALUES (5, 'Computers', 4, 2, 'Laptops and computers', 1);
 INSERT INTO dim_category VALUES (6, 'Mobile', 4, 2, 'Mobile phones and tablets', 1);
-INSERT INTO dim_category VALUES (7, 'Home & Garden', NULL, 1, 'Home improvement and garden', 1);
+INSERT INTO dim_category VALUES (7, 'Home AND Garden', NULL, 1, 'Home improvement and garden', 1);
 INSERT INTO dim_category VALUES (8, 'Furniture', 7, 2, 'Home furniture', 1);
 INSERT INTO dim_category VALUES (9, 'Beauty', NULL, 1, 'Beauty and personal care', 1);
 INSERT INTO dim_category VALUES (10, 'Sports', NULL, 1, 'Sports and fitness', 1);
@@ -189,4 +189,60 @@ INSERT INTO fact_conversion VALUES (49, 5, 20250115, 1009, 5004, 3002, 2002, 4, 
 INSERT INTO fact_conversion VALUES (50, 8, 20250115, 1010, 5001, 3001, 2001, 3, 'PURCHASE', 220.00, 1);
 
 COMMIT;
+
+--REQUETES ANALYTIQUES--
+
+--Q1
+SELECT 
+    d.year, d.month, c.objective,
+    SUM(f.conversion_value) as revenue,
+    SUM(f.conversion_count) as conversions
+FROM fact_conversion f
+JOIN dim_date d ON f.date_id = d.date_id
+JOIN dim_campaign c ON f.campaign_id = c.campaign_id
+GROUP BY d.year, d.month, c.objective
+ORDER BY d.year, d.month;
+
+--Q2
+SELECT 
+    m.country, m.merchant_name,
+    SUM(f.conversion_value) as revenue,
+    COUNT(DISTINCT f.user_id) as unique_customers
+FROM fact_conversion f
+JOIN dim_merchant m ON f.merchant_id = m.merchant_id
+WHERE f.date_id >= 20250101
+GROUP BY m.country, m.merchant_name
+ORDER BY revenue DESC;
+
+--Q3
+SELECT 
+    d.is_weekend,
+    SUM(f.conversion_value) as revenue,
+    SUM(f.conversion_count) as conversions,
+    AVG(f.conversion_value) as avg_order_value
+FROM fact_conversion f
+JOIN dim_date d ON f.date_id = d.date_id
+GROUP BY d.is_weekend;
+
+--Q4
+SELECT 
+    u.cohort_month, u.country,
+    COUNT(DISTINCT f.user_id) as converting_users,
+    SUM(f.conversion_value) as total_revenue
+FROM fact_conversion f
+JOIN dim_user u ON f.user_id = u.user_id
+GROUP BY u.cohort_month, u.country
+ORDER BY u.cohort_month;
+
+--Q5
+SELECT 
+    c.category_id, t.period_of_the_day,
+    SUM(f.conversion_value) as revenue,
+    COUNT(*) as conversion_events
+FROM fact_conversion f
+JOIN dim_category c ON f.category_id = c.category_id
+JOIN dim_time t ON f.time_id = t.time_id
+GROUP BY c.category_id, t.period_of_the_day;
+
+
 
