@@ -1,13 +1,14 @@
 -- =============================================
 -- DIMENSIONS
 -- =============================================
+drop table fact_conversion; 
 drop table dim_date; 
 drop table dim_event_type; 
 drop table dim_user; 
 drop table dim_pin; 
 drop table dim_campaign; 
 drop table dim_merchant; 
-drop table fact_conversion; 
+drop table dim_time; 
 -- Dimension Date
 CREATE TABLE dim_date (
     date_id NUMBER PRIMARY KEY,
@@ -29,7 +30,6 @@ CREATE TABLE dim_time (
     time_bucket VARCHAR2(10), 
     period_of_the_day VARCHAR2(10), 
     minute_of_the_day NUMBER
-
 );
 
 
@@ -119,7 +119,6 @@ CREATE TABLE fact_conversion (
     event_type_id VARCHAR2(20),
     conversion_value NUMBER(15,2),
     conversion_count NUMBER
-    
     );
 ALTER TABLE fact_conversion ADD CONSTRAINT fk_time 
     FOREIGN KEY (time_id) REFERENCES dim_time(time_id);
@@ -140,9 +139,9 @@ ALTER TABLE fact_conversion ADD CONSTRAINT fk_merchant
 
 ALTER TABLE fact_conversion ADD CONSTRAINT fk_event_type 
     FOREIGN KEY (event_type_id) REFERENCES dim_event_type(event_type_id);
-CREATE TABLE categorie(
+--CREATE TABLE categorie(
     
-); 
+--); 
 -- =============================================
 -- VUES VIRTUELLES POUR DIMENSIONS PARTAGÉES
 -- =============================================
