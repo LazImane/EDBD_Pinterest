@@ -1,7 +1,13 @@
 -- =============================================
 -- DIMENSIONS
 -- =============================================
-
+drop table dim_date; 
+drop table dim_event_type; 
+drop table dim_user; 
+drop table dim_pin; 
+drop table dim_campaign; 
+drop table dim_merchant; 
+drop table fact_conversion; 
 -- Dimension Date
 CREATE TABLE dim_date (
     date_id NUMBER PRIMARY KEY,
@@ -14,6 +20,18 @@ CREATE TABLE dim_date (
     is_weekend NUMBER(1),
     is_holiday NUMBER(1)
 );
+
+CREATE TABLE dim_time(
+    time_id NUMBER PRIMARY KEY, 
+    hour NUMBER, 
+    minute NUMBER, 
+    second NUMBER, 
+    time_bucket VARCHAR(10), 
+    period_of_the_day VARCHAR(10), 
+    minute_of_the_day NUMBER
+
+);
+
 
 -- Dimension Event Type
 CREATE TABLE dim_event_type (
