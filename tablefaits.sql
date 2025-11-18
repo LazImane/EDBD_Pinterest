@@ -120,16 +120,26 @@ CREATE TABLE fact_conversion (
     conversion_value NUMBER(15,2),
     conversion_count NUMBER,
     
-    -- Contraintes de clés étrangères
-    CONSTRAINT fk_time FOREIGN KEY (time_id) REFERENCES dim_time(time_id),
-    CONSTRAINT fk_date FOREIGN KEY (date_id) REFERENCES dim_date(date_id),
-    CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES dim_user(user_id),
-    CONSTRAINT fk_pin FOREIGN KEY (pin_id) REFERENCES dim_pin(pin_id),
-    CONSTRAINT fk_campaign FOREIGN KEY (campaign_id) REFERENCES dim_campaign(campaign_id),
-    CONSTRAINT fk_merchant FOREIGN KEY (merchant_id) REFERENCES dim_merchant(merchant_id),
-    CONSTRAINT fk_event_type FOREIGN KEY (event_type_id) REFERENCES dim_event_type(event_type_id)
-);
+    );
+ALTER TABLE fact_conversion ADD CONSTRAINT fk_time 
+    FOREIGN KEY (time_id) REFERENCES dim_time(time_id);
 
+ALTER TABLE fact_conversion ADD CONSTRAINT fk_date 
+    FOREIGN KEY (date_id) REFERENCES dim_date(date_id);
+
+ALTER TABLE fact_conversion ADD CONSTRAINT fk_user 
+    FOREIGN KEY (user_id) REFERENCES dim_user(user_id);
+ALTER TABLE fact_conversion ADD CONSTRAINT fk_pin 
+    FOREIGN KEY (pin_id) REFERENCES dim_pin(pin_id);
+
+ALTER TABLE fact_conversion ADD CONSTRAINT fk_campaign 
+    FOREIGN KEY (campaign_id) REFERENCES dim_campaign(campaign_id);
+
+ALTER TABLE fact_conversion ADD CONSTRAINT fk_merchant 
+    FOREIGN KEY (merchant_id) REFERENCES dim_merchant(merchant_id);
+
+ALTER TABLE fact_conversion ADD CONSTRAINT fk_event_type 
+    FOREIGN KEY (event_type_id) REFERENCES dim_event_type(event_type_id);
 CREATE TABLE categorie(
     
 ); 
