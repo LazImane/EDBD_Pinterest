@@ -21,13 +21,13 @@ CREATE TABLE dim_date (
     is_holiday NUMBER(1)
 );
 
-CREATE TABLE dim_time(
+CREATE TABLE dim_time (
     time_id NUMBER PRIMARY KEY, 
     hour NUMBER, 
     minute NUMBER, 
     second NUMBER, 
-    time_bucket VARCHAR(10), 
-    period_of_the_day VARCHAR(10), 
+    time_bucket VARCHAR2(10), 
+    period_of_the_day VARCHAR2(10), 
     minute_of_the_day NUMBER
 
 );
@@ -118,7 +118,7 @@ CREATE TABLE fact_conversion (
     merchant_id NUMBER,
     event_type_id VARCHAR2(20),
     conversion_value NUMBER(15,2),
-    conversion_count NUMBER,
+    conversion_count NUMBER
     
     );
 ALTER TABLE fact_conversion ADD CONSTRAINT fk_time 
