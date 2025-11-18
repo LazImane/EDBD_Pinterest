@@ -2,6 +2,7 @@
 -- DIMENSIONS
 -- =============================================
 drop table fact_conversion; 
+drop table dim_category;
 drop table dim_date; 
 drop table dim_event_type; 
 drop table dim_user; 
@@ -103,6 +104,15 @@ CREATE TABLE dim_campaign (
     status VARCHAR2(20),
     placement_type VARCHAR2(50)
 );
+-- TABLE AJOUTEE A LA PARTIE 4 
+CREATE TABLE dim_category(
+   category_id NUMBER PRIMARY KEY, 
+   category_name VARCHAR2(50), 
+   parent_category_id NUMBER, 
+   category_level NUMBER, 
+   description VARCHAR2(60), 
+    is_active NUMBER(1) CHECK (is_active IN (0, 1))
+    ); 
 
 -- =============================================
 -- TABLE DE FAIT PRINCIPALE
@@ -116,6 +126,7 @@ CREATE TABLE fact_conversion (
     pin_id NUMBER,
     campaign_id NUMBER,
     merchant_id NUMBER,
+    category_id NUMBER,
     event_type_id VARCHAR2(20),
     conversion_value NUMBER(15,2),
     conversion_count NUMBER
@@ -139,63 +150,13 @@ ALTER TABLE fact_conversion ADD CONSTRAINT fk_merchant
 
 ALTER TABLE fact_conversion ADD CONSTRAINT fk_event_type 
     FOREIGN KEY (event_type_id) REFERENCES dim_event_type(event_type_id);
---CREATE TABLE categorie(
-    
---); 
+
+ALTER TABLE fact_conversion ADD CONSTRAINT fk_category
+    FOREIGN KEY (category_id) REFERENCES dim_category(category_id); 
+
 -- =============================================
 -- VUES VIRTUELLES POUR DIMENSIONS PARTAGÉES
 -- =============================================
-
--- Vue pour l'analyse des performances des campagnes
-CREATE OR REPLACE VIEW v_campaign_performance AS
-SELECT 
-    c.campaign_id,
-    c.campaign_name,
-    c.objective,
-    c.budget,
-    COUNT(f.conversion_id) as total_conversions,
-    SUM(f.conversion_value) as total_revenue,
-    CASE WHEN c.budget > 0 THEN SUM(f.conversion_value) / c.budget ELSE 0 END as roas
-FROM dim_campaign c
-LEFT JOIN fact_conversion f ON c.campaign_id = f.campaign_id
-GROUP BY c.campaign_id, c.campaign_name, c.objective, c.budget;
-
--- Vue pour l'analyse utilisateur avec conversions
-CREATE OR REPLACE VIEW v_user_conversion_analysis AS
-SELECT 
-    u.user_id,
-    u.country,
-    u.age_bucket,
-    u.account_type,
-    COUNT(f.conversion_id) as conversion_count,
-    SUM(f.conversion_value) as total_value,
-    et.event_category
-FROM dim_user u
-JOIN fact_conversion f ON u.user_id = f.user_id
-JOIN dim_event_type et ON f.event_type_id = et.event_type_id
-GROUP BY u.user_id, u.country, u.age_bucket, u.account_type, et.event_category;
-
--- =============================================
--- INDEX POUR LES PERFORMANCES
--- =============================================
-
--- Index sur les clés étrangères de la table de fait
-CREATE INDEX idx_fact_conv_time ON fact_conversion(time_id);
-CREATE INDEX idx_fact_conv_user ON fact_conversion(user_id);
-CREATE INDEX idx_fact_conv_pin ON fact_conversion(pin_id);
-CREATE INDEX idx_fact_conv_campaign ON fact_conversion(campaign_id);
-CREATE INDEX idx_fact_conv_merchant ON fact_conversion(merchant_id);
-CREATE INDEX idx_fact_conv_event_type ON fact_conversion(event_type_id);
-
--- Index sur les colonnes fréquemment interrogées
-CREATE INDEX idx_user_country ON dim_user(country);
-CREATE INDEX idx_user_age ON dim_user(age_bucket);
-CREATE INDEX idx_pin_promoted ON dim_pin(is_promoted);
-CREATE INDEX idx_pin_category ON dim_pin(category_id);
-CREATE INDEX idx_campaign_status ON dim_campaign(status);
-CREATE INDEX idx_merchant_industry ON dim_merchant(industry);
-
-
 CREATE OR REPLACE VIEW DATEDIM
 AS SELECT * FROM DIM_DATE ; 
 
@@ -204,3 +165,61 @@ AS SELECT * FROM DIM_PIN;
 
 CREATE OR REPLACE VIEW USERDIM
 AS SELECT * FROM DIM_USER; 
+
+-- ==============================================
+-- REQUETES ANALYTIQUES 
+-- ==============================================
+
+-- CREATING MATERIALIZED VIEWS -- 
+CREATE MATERIALIZED VIEW mv_daily_campaign_merchant AS
+    SELECT 
+    f.date_id, f.campaign_id, f.merchant_id,
+   SUM(f.conversion_value) as total_revenue,
+   SUM(f.conversion_count) as total_conversions
+FROM fact_conversion f
+GROUP BY f.date_id, f.campaign_id, f.merchant_id;
+
+
+CREATE MATERIALIZED VIEW mv_user_cohort AS
+SELECT 
+    u.cohort_month, u.country, u.device_preference,
+    COUNT(DISTINCT f.user_id) as user_count,
+    SUM(f.conversion_value) as total_revenue
+FROM fact_conversion f
+JOIN dim_user u ON f.user_id = u.user_id
+GROUP BY u.cohort_month, u.country, u.device_preference;
+
+CREATE MATERIALIZED VIEW mv_category_time AS
+SELECT 
+    c.category_id, t.period_of_the_day, d.is_weekend,
+    SUM(f.conversion_value) as total_revenue,
+    COUNT(*) as conversion_count
+FROM fact_conversion f
+JOIN dim_category c ON f.category_id = c.category_id
+JOIN dim_time t ON f.time_id = t.time_id
+JOIN dim_date d ON f.date_id = d.date_id
+GROUP BY c.category_id, t.period_of_the_day, d.is_weekend;
+
+BEGIN
+    EXECUTE IMMEDIATE 'DROP INDEX bji_is_weekend';
+EXCEPTION
+    WHEN OTHERS THEN NULL;
+END;
+/
+
+BEGIN
+    EXECUTE IMMEDIATE 'DROP INDEX bji_campaign_objective';
+EXCEPTION
+    WHEN OTHERS THEN NULL;
+END;
+/
+ 
+-- BITMAP --
+CREATE BITMAP INDEX bji_campaign_objective
+ON fact_conversion(event_type_id)
+
+
+
+CREATE BITMAP INDEX bji_is_weekend
+ON fact_conversion(is_weekend)
+
